@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    
+    <!-- مكتبات الفايربيس للربط السحابي -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+  // بيانات مشروعك الخاصة بـ Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyDqxclAE2ZgkwffqoxUppO2p3oPGYdqDgI",
+    authDomain: "mmmm-2eeb6.firebaseapp.com",
+    projectId: "mmmm-2eeb6",
+    storageBucket: "mmmm-2eeb6.firebasestorage.app",
+    messagingSenderId: "864687939860",
+    appId: "1:864687939860:web:044a597a874c79ceed2201",
+    measurementId: "G-0G1E2XY1XZ"
+  };
+
+  // تهيئة قاعدة البيانات
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+</script>
+
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قائمة الطعام - طلب التقديم</title>
+    <!-- Google Fonts: Cairo -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #2e7d32;
+            --primary-gradient: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+            --accent: #d84315;
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --card-bg: rgba(255, 255, 255, 0.98);
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --radius-lg: 20px;
+            --radius-md: 14px;
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 12px;
+            color: var(--text-dark);
+        }
+
+        .app-card {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Header Styling */
+        .header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: #ffffff;
+            padding: 24px 20px;
+            text-align: center;
+            position: relative;
+            border-bottom: 4px solid #2e7d32;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 13px;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        /* Form Container */
+        .content-body {
+            padding: 20px;
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 16px;
+            background: var(--primary);
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        /* Food Items Grid */
+        .food-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .food-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #ffffff;
+            border: 1.5px solid var(--border-color);
+            padding: 10px 12px;
+            border-radius: var(--radius-md);
+            transition: all 0.25s ease;
+        }
+
+        .food-card.selected {
+            border-color: var(--primary);
+            background: #f0fdf4;
+            box-shadow: 0 4px 12px rgba(46, 125, 50, 0.08);
+        }
+
+        .food-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .food-emoji {
+            font-size: 22px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            border-radius: 10px;
+            border: 1px solid #f1f5f9;
+            flex-shrink: 0;
+        }
+
+        .food-card.selected .food-emoji {
+            background: #dcfce7;
+        }
+
+        .food-emoji img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        .food-category {
+            display: inline-block;
+            margin-top: 2px;
+            font-size: 10px;
+            font-weight: 700;
+            color: #2e7d32;
+            background: #f0fdf4;
+            border: 1px solid #dcfce7;
+            padding: 1px 8px;
+            border-radius: 20px;
+        }
+
+        .menu-empty {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+            padding: 20px 10px;
+        }
+
+        .food-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .food-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .food-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .food-price {
+            color: #2e7d32;
+            font-weight: 800;
+            font-size: 13px;
+            margin-top: 1px;
+        }
+
+        /* Compact Control Box */
+        .control-box {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            align-items: center;
+            background: #f8fafc;
+            padding: 4px 6px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-qty {
+            width: 24px;
+            height: 24px;
+            border: none;
+            border-radius: 6px;
+            background: #ffffff;
+            color: var(--text-dark);
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+            transition: all 0.15s ease;
+        }
+
+        .btn-qty:hover {
+            background: var(--primary);
+            color: #ffffff;
+        }
+
+        .btn-delete {
+            width: 100%;
+            height: 18px;
+            border: none;
+            border-radius: 4px;
+            background: #ffebee;
+            color: #d32f2f;
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            transition: all 0.15s ease;
+        }
+
+        .btn-delete:hover {
+            background: #d32f2f;
+            color: #ffffff;
+        }
+
+        .qty-count {
+            width: 18px;
+            text-align: center;
+            font-weight: 800;
+            font-size: 13px;
+            color: var(--text-dark);
+        }
+
+        /* Total Price Section */
+        .total-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            border: 1.5px solid var(--border-color);
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            margin-bottom: 20px;
+        }
+
+        .total-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .total-amount {
+            font-size: 18px;
+            font-weight: 900;
+            color: var(--primary);
+        }
+
+        /* Textarea Styling */
+        .textarea-box {
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 80px;
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 10px 12px;
+            font-size: 13px;
+            color: var(--text-dark);
+            outline: none;
+            resize: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            background: #ffffff;
+        }
+
+        textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+        }
+
+        textarea::placeholder {
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        /* Submit Button */
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 6px 14px rgba(46, 125, 50, 0.25);
+            transition: all 0.2s ease;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(46, 125, 50, 0.35);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        /* Toast Alert */
+        .toast {
+            position: fixed;
+            top: -1000px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 50px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            border: 1px solid rgba(255,255,255,0.1);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .toast.show {
+            top: 20px;
+        }
+
+        .toast-icon {
+            background: #2e7d32;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        /* ===== متابعة حالة الطلب ===== */
+        .order-status-panel {
+            margin: 0 20px 20px;
+            padding: 18px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 16px;
+            background: #f8fafc;
+            display: none;
+        }
+        .order-status-panel.show { display: block; }
+        .order-status-head {
+            display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:16px;
+        }
+        .order-status-title { font-size:15px; font-weight:800; color:#0f172a; }
+        .order-status-badge { padding:6px 12px; border-radius:20px; font-size:12px; font-weight:800; }
+        .order-status-badge.new { background:#fee2e2; color:#dc2626; }
+        .order-status-badge.preparing { background:#fef3c7; color:#d97706; }
+        .order-status-badge.ready { background:#dcfce7; color:#16a34a; }
+        .order-status-badge.delivered { background:#e2e8f0; color:#475569; }
+        .status-steps { display:grid; grid-template-columns:repeat(4,1fr); gap:5px; }
+        .status-step { text-align:center; position:relative; }
+        .status-step .circle {
+            width:34px; height:34px; margin:0 auto 6px; border-radius:50%; background:#e2e8f0; color:#64748b;
+            display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;
+        }
+        .status-step.active .circle { background:#2e7d32; color:#fff; }
+        .status-step.current .circle { box-shadow:0 0 0 4px rgba(46,125,50,.12); }
+        .status-step span { display:block; font-size:10px; color:#64748b; font-weight:700; }
+        .status-step.active span { color:#2e7d32; }
+        .status-meta { margin-top:14px; text-align:center; font-size:12px; color:#64748b; }
+        .order-id { font-size:11px; color:#94a3b8; margin-top:4px; }
+        .track-btn {
+            width:100%; margin-top:10px; padding:10px; border:1px solid #dbeafe; border-radius:10px;
+            background:#eff6ff; color:#2563eb; font-family:inherit; font-weight:800; cursor:pointer;
+        }
+
+        /* ===== نافذة تكبير الوجبة (Food Modal) ===== */
+        .food-info {
+            cursor: pointer;
+        }
+
+        .food-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.78);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        .food-modal-overlay.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .food-modal {
+            background: #ffffff;
+            width: 100%;
+            max-width: 420px;
+            max-height: 88vh;
+            overflow-y: auto;
+            border-radius: 22px;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            transform: scale(0.88) translateY(10px);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .food-modal-overlay.show .food-modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .food-modal-close {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            width: 34px;
+            height: 34px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(15, 23, 42, 0.55);
+            color: #fff;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+            backdrop-filter: blur(4px);
+        }
+
+        .food-modal-image-wrap {
+            width: 100%;
+            height: 240px;
+            background: linear-gradient(135deg, #f0fdf4 0%, #f8fafc 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .food-modal-image-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .food-modal-emoji-large {
+            font-size: 90px;
+        }
+
+        .food-modal-body {
+            padding: 22px 20px 24px;
+        }
+
+        .food-modal-category {
+            display: inline-block;
+            margin-bottom: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #2e7d32;
+            background: #f0fdf4;
+            border: 1px solid #dcfce7;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+
+        .food-modal-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 6px;
+        }
+
+        .food-modal-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.7;
+            margin-bottom: 14px;
+        }
+
+        .food-modal-price {
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--primary);
+            margin-bottom: 18px;
+        }
+
+        .food-modal-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            background: #f8fafc;
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px;
+        }
+
+        .btn-qty-modal {
+            width: 42px;
+            height: 42px;
+            border: none;
+            border-radius: 12px;
+            background: #ffffff;
+            color: var(--text-dark);
+            font-size: 20px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.15s ease;
+        }
+
+        .btn-qty-modal:hover {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .food-modal-qty {
+            min-width: 28px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text-dark);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <div class="toast-icon">✓</div>
+        <span>تم إرسال الطلب إلى الشيف بنجاح!</span>
+    </div>
+
+    <!-- نافذة تكبير تفاصيل الوجبة -->
+    <div class="food-modal-overlay" id="foodModalOverlay" onclick="if(event.target === this) closeFoodModal()">
+        <div class="food-modal">
+            <button class="food-modal-close" type="button" onclick="closeFoodModal()">✕</button>
+            <div class="food-modal-image-wrap" id="foodModalImageWrap"></div>
+            <div class="food-modal-body">
+                <span class="food-modal-category" id="foodModalCategory" style="display:none;"></span>
+                <div class="food-modal-title" id="foodModalTitle"></div>
+                <p class="food-modal-desc" id="foodModalDesc"></p>
+                <div class="food-modal-price" id="foodModalPrice"></div>
+                <div class="food-modal-controls">
+                    <button class="btn-qty-modal" type="button" onclick="modalChangeQty(-1)">-</button>
+                    <span class="food-modal-qty" id="foodModalQty">0</span>
+                    <button class="btn-qty-modal" type="button" onclick="modalChangeQty(1)">+</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card">
+        <!-- Header -->
+        <div class="header">
+            <img src="1000018199.png" alt="شعار المطعم" style="width:80px;height:80px;object-fit:contain;border-radius:50%;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto;">
+            <h1>🍽️ قائمة الطعام الرقمية</h1>
+            <p>اختر وجباتك المفضلة وسنقوم بتجهيزها لك فوراً</p>
+        </div>
+
+        <!-- Content Body -->
+        <div class="content-body">
+            <div class="section-title">اختر أصناف الوجبات والكمية:</div>
+
+            <div class="food-grid" id="foodGrid">
+                <p id="menuLoading" style="text-align:center;color:var(--text-muted);font-size:13px;padding:10px 0;">
+                    ⏳ جاري تحميل المنيو...
+                </p>
+            </div>
+
+            <!-- Total Price Section -->
+            <div class="total-summary">
+                <span class="total-title">المجموع الكلي:</span>
+                <span class="total-amount" id="totalPrice">0 د.ع</span>
+            </div>
+
+            <!-- Notes Section -->
+            <div class="section-title">ملاحظات خاصة للشيف:</div>
+            <div class="textarea-box">
+                <textarea id="notes" placeholder="مثال: بدون بصل، زيادة صوص، المشروب بدون ثلج..."></textarea>
+            </div>
+
+            <!-- Action Button -->
+            <button class="btn-submit" onclick="sendOrder()">
+                <span>إرسال الطلب للتحضير</span>
+                <span style="font-size: 18px;">👨‍🍳</span>
+            </button>
+        </div>
+
+        <!-- Developer Credit -->
+        <div style="text-align:center;padding:14px 10px 18px;font-size:12px;color:#94a3b8;font-family:'Cairo',sans-serif;border-top:1px solid #e2e8f0;margin-top:8px;">تم برمجة الموقع بواسطة:&nbsp;<span style="color:#2e7d32;font-weight:700;">محمد قاسم</span></div>
+    </div>
+
+    <script>
+        function updateTotalPrice() {
+            let total = 0;
+            document.querySelectorAll('.food-card').forEach(card => {
+                const price = parseInt(card.getAttribute('data-price')) || 0;
+                const qty = parseInt(card.querySelector('.qty-count').textContent) || 0;
+                total += price * qty;
+            });
+            document.getElementById('totalPrice').textContent = total.toLocaleString('ar-IQ') + ' د.ع';
+        }
+
+        function changeQty(btn, change) {
+            const card = btn.closest('.food-card');
+            const qtySpan = card.querySelector('.qty-count');
+            let qty = parseInt(qtySpan.textContent) + change;
+
+            if (qty < 0) qty = 0;
+            qtySpan.textContent = qty;
+
+            if (qty > 0) {
+                card.classList.add('selected');
+            } else {
+                card.classList.remove('selected');
+            }
+
+            updateTotalPrice();
+        }
+
+        function resetQty(btn) {
+            const card = btn.closest('.food-card');
+            const qtySpan = card.querySelector('.qty-count');
+            qtySpan.textContent = 0;
+            card.classList.remove('selected');
+
+            updateTotalPrice();
+        }
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3500);
+        }
+
+
+        async function sendOrder() {
+            let items = [];
+            let totalPrice = 0;
+
+            document.querySelectorAll('.food-card').forEach(card => {
+                const qty = parseInt(card.querySelector('.qty-count').textContent) || 0;
+                const price = parseInt(card.getAttribute('data-price')) || 0;
+                if (qty > 0) {
+                    items.push({
+                        name: card.getAttribute('data-name'),
+                        quantity: qty,
+                        price: price
+                    });
+                    totalPrice += price * qty;
+                }
+            });
+
+            if (items.length === 0) {
+                alert("⚠️ يرجى اختيار صنف واحد على الأقل قبل إرسال الطلب.");
+                return;
+            }
+
+            // حفظ الطلب مؤقتاً والانتقال لصفحة بيانات الزبون
+            sessionStorage.setItem("pendingOrder", JSON.stringify({
+                items,
+                totalPrice,
+                notes: document.getElementById("notes").value.trim()
+            }));
+
+            window.location.href = "info.html";
+        }
+            
+    // إظهار رسالة تأكيد للزبون
+    const toast = document.getElementById('toast');
+
+
+        // ===== عرض المنيو مباشرة من صفحة إدارة المنيو (Firestore) =====
+        function escapeHtml(str) {
+            return (str || "").replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
+
+        function renderMenuItems(items) {
+            const grid = document.getElementById('foodGrid');
+            if (!grid) return;
+
+            if (items.length === 0) {
+                grid.innerHTML = `<p class="menu-empty">لا توجد أصناف في المنيو حالياً، تحقق لاحقاً 🍽️</p>`;
+                updateTotalPrice();
+                return;
+            }
+
+            // تخزين بيانات الأصناف للوصول إليها عند فتح نافذة التكبير
+            window.menuItemsById = {};
+
+            grid.innerHTML = items.map((item, idx) => {
+                const itemId = item.id || ('idx_' + idx);
+                window.menuItemsById[itemId] = item;
+
+                const price = Number(item.price) || 0;
+                const emoji = item.image
+                    ? `<img src="${item.image}" alt="${escapeHtml(item.name)}">`
+                    : '🍽️';
+                const categoryBadge = item.category
+                    ? `<span class="food-category">${escapeHtml(item.category)}</span>`
+                    : '';
+
+                return `
+                <div class="food-card" data-name="${escapeHtml(item.name)}" data-price="${price}" data-id="${escapeHtml(itemId)}">
+                    <div class="food-info" onclick="openFoodModal(this)">
+                        <div class="food-emoji">${emoji}</div>
+                        <div class="food-details">
+                            <span class="food-title">${escapeHtml(item.name)}</span>
+                            <span class="food-sub">${escapeHtml(item.desc) || ''}</span>
+                            <span class="food-price">${price.toLocaleString('ar-IQ')} د.ع</span>
+                            ${categoryBadge}
+                        </div>
+                    </div>
+                    <div class="control-box">
+                        <div class="quantity-controls">
+                            <button class="btn-qty" onclick="changeQty(this, -1)">-</button>
+                            <span class="qty-count">0</span>
+                            <button class="btn-qty" onclick="changeQty(this, 1)">+</button>
+                        </div>
+                        <button class="btn-delete" onclick="resetQty(this)" title="حذف الوجبة">🗑️ حذف</button>
+                    </div>
+                </div>`;
+            }).join('');
+
+            updateTotalPrice();
+        }
+
+        // ===== نافذة تكبير تفاصيل الوجبة =====
+        let currentModalItemId = null;
+
+        function openFoodModal(el) {
+            const card = el.closest('.food-card');
+            if (!card) return;
+
+            const itemId = card.getAttribute('data-id');
+            const item = (window.menuItemsById || {})[itemId];
+            if (!item) return;
+
+            currentModalItemId = itemId;
+
+            const price = Number(item.price) || 0;
+            const qty = parseInt(card.querySelector('.qty-count').textContent) || 0;
+
+            const imageWrap = document.getElementById('foodModalImageWrap');
+            imageWrap.innerHTML = item.image
+                ? `<img src="${item.image}" alt="${escapeHtml(item.name)}">`
+                : `<span class="food-modal-emoji-large">🍽️</span>`;
+
+            const categoryEl = document.getElementById('foodModalCategory');
+            if (item.category) {
+                categoryEl.textContent = item.category;
+                categoryEl.style.display = 'inline-block';
+            } else {
+                categoryEl.style.display = 'none';
+            }
+
+            document.getElementById('foodModalTitle').textContent = item.name || '';
+            document.getElementById('foodModalDesc').textContent = item.desc || '';
+            document.getElementById('foodModalPrice').textContent = price.toLocaleString('ar-IQ') + ' د.ع';
+            document.getElementById('foodModalQty').textContent = qty;
+
+            document.getElementById('foodModalOverlay').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeFoodModal() {
+            document.getElementById('foodModalOverlay').classList.remove('show');
+            document.body.style.overflow = '';
+            currentModalItemId = null;
+        }
+
+        function modalChangeQty(change) {
+            if (!currentModalItemId) return;
+            const card = document.querySelector(`.food-card[data-id="${CSS.escape(currentModalItemId)}"]`);
+            if (!card) return;
+
+            const qtySpan = card.querySelector('.qty-count');
+            let qty = (parseInt(qtySpan.textContent) || 0) + change;
+            if (qty < 0) qty = 0;
+
+            qtySpan.textContent = qty;
+            card.classList.toggle('selected', qty > 0);
+            document.getElementById('foodModalQty').textContent = qty;
+
+            updateTotalPrice();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeFoodModal();
+        });
+
+        function subscribeToMenu() {
+            db.collection("menuItems")
+                .onSnapshot(snapshot => {
+                    const items = [];
+                    snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
+                    items.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+                    renderMenuItems(items);
+                }, error => {
+                    console.error("خطأ في تحميل المنيو من Firebase:", error);
+                    const grid = document.getElementById('foodGrid');
+                    if (grid) grid.innerHTML = `<p class="menu-empty">تعذر تحميل المنيو، تحقق من الاتصال بالإنترنت.</p>`;
+                });
+        }
+
+        subscribeToMenu();
+    </script>
+
+
+</body>
+
+</html>

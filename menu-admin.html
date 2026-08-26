@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>صفحة إدارة المنيو</title>
+
+<!-- مكتبات الفايربيس للربط السحابي (نفس مشروع صفحة الزبون) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDqxclAE2ZgkwffqoxUppO2p3oPGYdqDgI",
+    authDomain: "mmmm-2eeb6.firebaseapp.com",
+    projectId: "mmmm-2eeb6",
+    storageBucket: "mmmm-2eeb6.firebasestorage.app",
+    messagingSenderId: "864687939860",
+    appId: "1:864687939860:web:044a597a874c79ceed2201",
+    measurementId: "G-0G1E2XY1XZ"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lalezar&family=Tajawal:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#16211a;
+    --bg-alt:#1f2e22;
+    --paper:#efe6d0;
+    --paper-shadow:#d9cdac;
+    --ink:#23291f;
+    --ink-soft:#5b5744;
+    --mustard:#d9a441;
+    --rust:#c1442d;
+    --sage:#7c9473;
+    --ring: rgba(217,164,65,.45);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;}
+  html,body{
+    background:
+      radial-gradient(circle at 15% 10%, rgba(217,164,65,.07), transparent 45%),
+      radial-gradient(circle at 85% 90%, rgba(124,148,115,.08), transparent 50%),
+      var(--bg);
+    color:var(--paper);
+    font-family:'Tajawal',sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:1100px;margin:0 auto;padding:38px 22px 70px;}
+
+  /* ---------- Header ---------- */
+  header{text-align:center;margin-bottom:34px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    letter-spacing:.35em;
+    font-size:11px;
+    color:var(--mustard);
+    text-transform:uppercase;
+  }
+  h1{
+    font-family:'Lalezar',sans-serif;
+    font-weight:400;
+    font-size:44px;
+    margin:6px 0 8px;
+    color:var(--paper);
+    text-shadow:0 2px 0 rgba(0,0,0,.25);
+  }
+  header p{
+    color:#a9b6a6;
+    font-size:14.5px;
+    margin:0;
+  }
+  header .rule{
+    width:120px;height:3px;margin:18px auto 0;
+    background:repeating-linear-gradient(90deg,var(--mustard) 0 8px, transparent 8px 14px);
+    border-radius:3px;
+  }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar{
+    display:flex;gap:14px;justify-content:center;flex-wrap:wrap;
+    margin-bottom:38px;
+  }
+  button{
+    font-family:'Tajawal',sans-serif;
+    font-weight:700;
+    font-size:15px;
+    border:none;border-radius:9px;
+    padding:13px 26px;
+    cursor:pointer;
+    transition:transform .12s ease, box-shadow .12s ease, background .15s ease, opacity .15s ease;
+  }
+  button:active{transform:translateY(1px);}
+  button:focus-visible{outline:3px solid var(--ring);outline-offset:2px;}
+
+  .btn-add{
+    background:var(--mustard);
+    color:#241a06;
+    box-shadow:0 6px 0 #a97a24, 0 10px 16px rgba(0,0,0,.25);
+  }
+  .btn-add:hover{filter:brightness(1.06);}
+
+  .btn-del{
+    background:transparent;
+    color:#f3b8ab;
+    border:2px solid var(--rust);
+    box-shadow:0 6px 0 rgba(193,68,45,.35);
+  }
+  .btn-del:hover{background:rgba(193,68,45,.15);}
+  .btn-del:disabled{
+    opacity:.4;cursor:not-allowed;box-shadow:none;
+  }
+
+  .count-pill{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    background:var(--bg-alt);
+    color:var(--mustard);
+    border:1px solid rgba(217,164,65,.35);
+    border-radius:999px;
+    padding:4px 12px;
+    align-self:center;
+  }
+
+  /* ---------- Grid ---------- */
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(280px,1fr));
+    gap:26px;
+  }
+
+  /* ---------- Ticket card ---------- */
+  .ticket{
+    position:relative;
+    background:var(--paper);
+    color:var(--ink);
+    border-radius:4px;
+    box-shadow:0 12px 24px rgba(0,0,0,.35), 0 2px 0 var(--paper-shadow) inset;
+    display:flex;
+    overflow:hidden;
+    border:1px solid rgba(0,0,0,.06);
+  }
+  .ticket.selected{
+    outline:3px solid var(--rust);
+    outline-offset:-3px;
+  }
+  /* torn/scalloped top edge */
+  .ticket::before{
+    content:"";
+    position:absolute;top:0;left:0;right:0;height:10px;
+    background-image:radial-gradient(circle at 8px 0, transparent 6px, var(--bg) 6.5px);
+    background-size:16px 12px;
+    background-repeat:repeat-x;
+    background-position:top;
+  }
+
+  .ticket-check{
+    position:absolute;top:14px;left:12px;
+    width:20px;height:20px;
+    accent-color:var(--rust);
+    cursor:pointer;
+    z-index:2;
+  }
+
+  .ticket-media{
+    width:38%;
+    min-width:100px;
+    background:linear-gradient(160deg,#ddd0ac,#c9bb92);
+    display:flex;align-items:center;justify-content:center;
+    position:relative;
+    border-left:2px dashed rgba(35,41,31,.25);
+  }
+  .ticket-media img{width:100%;height:100%;object-fit:cover;display:block;}
+  .ticket-media .placeholder{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;color:#7a715a;text-align:center;padding:8px;
+  }
+
+  .ticket-body{
+    flex:1;
+    padding:18px 16px 16px;
+    display:flex;flex-direction:column;gap:8px;
+    min-width:0;
+  }
+  .ticket-name{
+    font-family:'Lalezar',sans-serif;
+    font-weight:400;
+    font-size:21px;
+    line-height:1.15;
+    margin:0;
+    padding-left:22px; /* room for checkbox */
+  }
+  .ticket-desc{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    line-height:1.5;
+    margin:0;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+  .ticket-meta{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-top:auto;
+    padding-top:10px;
+    border-top:1px dashed rgba(35,41,31,.25);
+  }
+  .badge{
+    font-size:11px;font-weight:700;
+    background:var(--sage);color:#12210f;
+    padding:4px 10px;border-radius:999px;
+  }
+  .price{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;font-size:16px;
+    color:var(--rust);
+  }
+  .price::before{content:"﷼ ";font-size:12px;}
+
+  /* ---------- Empty state ---------- */
+  .empty{
+    grid-column:1/-1;
+    text-align:center;
+    padding:60px 20px;
+    border:2px dashed rgba(239,230,208,.25);
+    border-radius:10px;
+    color:#a9b6a6;
+  }
+  .empty .big{font-family:'Lalezar',sans-serif;font-size:26px;color:var(--paper);display:block;margin-bottom:8px;}
+
+  /* ---------- Modal ---------- */
+  .overlay{
+    position:fixed;inset:0;
+    background:rgba(10,14,10,.72);
+    display:none;align-items:center;justify-content:center;
+    padding:20px;z-index:10;
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    background:var(--paper);color:var(--ink);
+    width:100%;max-width:460px;
+    border-radius:10px;
+    padding:26px 24px 22px;
+    box-shadow:0 24px 48px rgba(0,0,0,.5);
+    max-height:88vh;overflow-y:auto;
+  }
+  .modal h2{
+    font-family:'Lalezar',sans-serif;font-weight:400;font-size:26px;
+    margin:0 0 4px;
+  }
+  .modal .sub{font-size:12.5px;color:var(--ink-soft);margin:0 0 18px;}
+  .field{margin-bottom:14px;}
+  .field label{
+    display:block;font-size:12.5px;font-weight:700;
+    margin-bottom:5px;color:var(--ink-soft);
+  }
+  .field input[type=text],
+  .field input[type=number],
+  .field select,
+  .field textarea{
+    width:100%;
+    font-family:'Tajawal',sans-serif;
+    font-size:14.5px;
+    padding:10px 11px;
+    border-radius:7px;
+    border:1.5px solid rgba(35,41,31,.2);
+    background:#fbf8ef;
+    color:var(--ink);
+  }
+  .field textarea{resize:vertical;min-height:60px;font-family:'Tajawal',sans-serif;}
+  .field input:focus,.field select:focus,.field textarea:focus{
+    outline:none;border-color:var(--mustard);box-shadow:0 0 0 3px var(--ring);
+  }
+  .file-row{
+    display:flex;align-items:center;gap:12px;
+  }
+  .file-row .thumb{
+    width:56px;height:56px;border-radius:7px;object-fit:cover;
+    border:1.5px solid rgba(35,41,31,.2);background:#ddd0ac;flex-shrink:0;
+  }
+  .file-btn{
+    font-size:12.5px;font-weight:700;
+    background:#e4d8b9;color:var(--ink);
+    padding:9px 14px;border-radius:7px;
+    cursor:pointer;flex:1;text-align:center;
+  }
+  .file-btn input{display:none;}
+
+  .modal-actions{
+    display:flex;gap:10px;margin-top:18px;
+  }
+  .btn-save{flex:1;background:var(--sage);color:#12210f;box-shadow:0 5px 0 #5f7657;}
+  .btn-cancel{flex:1;background:transparent;color:var(--ink-soft);border:1.5px solid rgba(35,41,31,.25);}
+  .error-msg{color:var(--rust);font-size:12px;margin-top:-6px;margin-bottom:10px;display:none;}
+
+  @media (max-width:520px){
+    h1{font-size:34px;}
+    .ticket-media{width:34%;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <img src="1000018199.png" alt="شعار المطعم" style="width:80px;height:80px;object-fit:contain;border-radius:50%;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto;">
+    <div class="eyebrow">لوحة تحكم المطعم</div>
+    <h1>صفحة إدارة المنيو</h1>
+    <p>أضف وجبات جديدة، عدّل تفاصيلها، واحذف ما لم يعد متوفرًا</p>
+    <div class="rule"></div>
+  </header>
+
+  <div class="toolbar">
+    <button class="btn-add" id="openAdd">＋ إضافة وجبة</button>
+    <button class="btn-del" id="deleteBtn" disabled>🗑 حذف الوجبة المحددة</button>
+    <span class="count-pill" id="countPill">0 وجبة في المنيو</span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+</div>
+
+<!-- Modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2>وجبة جديدة</h2>
+    <p class="sub">املأ التفاصيل التالية لإضافتها إلى المنيو</p>
+
+    <form id="mealForm">
+      <div class="field">
+        <label>صورة الوجبة</label>
+        <div class="file-row">
+          <img id="preview" class="thumb" src="" style="display:none;">
+          <label class="file-btn">اختر صورة
+            <input type="file" id="imageInput" accept="image/*">
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>اسم الوجبة</label>
+        <input type="text" id="nameInput" placeholder="مثال: كبسة دجاج" required>
+      </div>
+
+      <div class="field">
+        <label>الوصف</label>
+        <textarea id="descInput" placeholder="وصف مختصر لمكونات الوجبة"></textarea>
+      </div>
+
+      <div class="field">
+        <label>الصنف</label>
+        <select id="categoryInput">
+          <option value="مقبلات">مقبلات</option>
+          <option value="أطباق رئيسية" selected>أطباق رئيسية</option>
+          <option value="حلويات">حلويات</option>
+          <option value="مشروبات">مشروبات</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>السعر</label>
+        <input type="number" id="priceInput" min="0" step="0.01" placeholder="0.00" required>
+      </div>
+
+      <p class="error-msg" id="errorMsg">فضلاً أدخل اسم الوجبة والسعر</p>
+
+      <div class="modal-actions">
+        <button type="submit" class="btn-save">حفظ الوجبة</button>
+        <button type="button" class="btn-cancel" id="cancelBtn">إلغاء</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  let meals = [];
+  let selected = new Set();
+  let pendingImage = "";
+
+  const grid = document.getElementById('grid');
+  const overlay = document.getElementById('overlay');
+  const form = document.getElementById('mealForm');
+  const preview = document.getElementById('preview');
+  const errorMsg = document.getElementById('errorMsg');
+  const deleteBtn = document.getElementById('deleteBtn');
+  const countPill = document.getElementById('countPill');
+
+  document.getElementById('openAdd').addEventListener('click', () => {
+    form.reset();
+    pendingImage = "";
+    preview.style.display = 'none';
+    errorMsg.style.display = 'none';
+    overlay.classList.add('open');
+  });
+  document.getElementById('cancelBtn').addEventListener('click', closeModal);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+  function closeModal(){ overlay.classList.remove('open'); }
+
+  document.getElementById('imageInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        // نقلل حجم الصورة قبل رفعها لقاعدة البيانات
+        const maxW = 480;
+        const scale = Math.min(1, maxW / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        pendingImage = canvas.toDataURL('image/jpeg', 0.72);
+        preview.src = pendingImage;
+        preview.style.display = 'block';
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  const saveBtn = form.querySelector('.btn-save');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('nameInput').value.trim();
+    const price = document.getElementById('priceInput').value;
+    if (!name || price === "") {
+      errorMsg.style.display = 'block';
+      return;
+    }
+    errorMsg.style.display = 'none';
+
+    const newMeal = {
+      name,
+      desc: document.getElementById('descInput').value.trim(),
+      category: document.getElementById('categoryInput').value,
+      price: parseFloat(price),
+      image: pendingImage,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'جاري الحفظ...';
+    try {
+      await db.collection('menuItems').add(newMeal);
+      closeModal();
+    } catch (err) {
+      console.error('تعذر حفظ الوجبة:', err);
+      errorMsg.textContent = 'تعذر حفظ الوجبة، تحقق من الاتصال بالإنترنت';
+      errorMsg.style.display = 'block';
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'حفظ الوجبة';
+    }
+  });
+
+  deleteBtn.addEventListener('click', async () => {
+    if (selected.size === 0) return;
+    deleteBtn.disabled = true;
+    deleteBtn.textContent = 'جاري الحذف...';
+    try {
+      await Promise.all([...selected].map(id => db.collection('menuItems').doc(id).delete()));
+      selected.clear();
+    } catch (err) {
+      console.error('تعذر حذف الوجبة:', err);
+      alert('تعذر حذف الوجبة، تحقق من الاتصال بالإنترنت');
+    } finally {
+      deleteBtn.textContent = '🗑 حذف الوجبة المحددة';
+      deleteBtn.disabled = selected.size === 0;
+    }
+  });
+
+  function toggleSelect(id, checked){
+    if (checked) selected.add(id); else selected.delete(id);
+    deleteBtn.disabled = selected.size === 0;
+  }
+
+  function render(){
+    countPill.textContent = meals.length + (meals.length === 1 ? ' وجبة في المنيو' : ' وجبات في المنيو');
+    deleteBtn.disabled = selected.size === 0;
+
+    if (meals.length === 0){
+      grid.innerHTML = `<div class="empty">
+        <span class="big">المنيو فارغ</span>
+        اضغط على «إضافة وجبة» لبدء بناء قائمة الطعام
+      </div>`;
+      return;
+    }
+
+    grid.innerHTML = meals.map(m => `
+      <div class="ticket ${selected.has(m.id) ? 'selected' : ''}">
+        <input type="checkbox" class="ticket-check" data-id="${m.id}" ${selected.has(m.id) ? 'checked' : ''}>
+        <div class="ticket-media">
+          ${m.image
+            ? `<img src="${m.image}" alt="${escapeHtml(m.name)}">`
+            : `<span class="placeholder">لا توجد<br>صورة</span>`}
+        </div>
+        <div class="ticket-body">
+          <h3 class="ticket-name">${escapeHtml(m.name)}</h3>
+          <p class="ticket-desc">${escapeHtml(m.desc) || 'بدون وصف'}</p>
+          <div class="ticket-meta">
+            <span class="badge">${escapeHtml(m.category)}</span>
+            <span class="price">${Number(m.price).toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    grid.querySelectorAll('.ticket-check').forEach(cb => {
+      cb.addEventListener('change', (e) => toggleSelect(e.target.dataset.id, e.target.checked));
+    });
+  }
+
+  function escapeHtml(str){
+    return (str || "").replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  db.collection('menuItems').orderBy('createdAt', 'asc')
+    .onSnapshot(snapshot => {
+      meals = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // نتجاهل أي تحديد لعناصر لم تعد موجودة
+      selected.forEach(id => { if (!meals.find(m => m.id === id)) selected.delete(id); });
+      render();
+    }, err => {
+      console.error('تعذر تحميل المنيو:', err);
+      grid.innerHTML = `<div class="empty"><span class="big">تعذر الاتصال بقاعدة البيانات</span>تحقق من اتصال الإنترنت وأعد تحميل الصفحة</div>`;
+    });
+
+  render();
+</script>
+<div style="background:#1e293b;color:rgba(255,255,255,0.3);font-family:'Tajawal',sans-serif;border-top:1px solid rgba(255,255,255,0.06);padding:14px 10px 18px;text-align:center;font-size:12px;margin-top:10px;">تم برمجة الموقع بواسطة:&nbsp;<span style="color:rgba(99,179,237,0.8);font-weight:700;">محمد قاسم</span></div>
+</body>
+</html>
