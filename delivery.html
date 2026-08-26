@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة الدليفري</title>
+
+  <!-- Firebase Compat SDK (نفس الإصدار المستخدم في index.html و chef.html) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDqxclAE2ZgkwffqoxUppO2p3oPGYdqDgI",
+      authDomain: "mmmm-2eeb6.firebaseapp.com",
+      projectId: "mmmm-2eeb6",
+      storageBucket: "mmmm-2eeb6.firebasestorage.app",
+      messagingSenderId: "864687939860",
+      appId: "1:864687939860:web:044a597a874c79ceed2201",
+      measurementId: "G-0G1E2XY1XZ"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
+
+  <link rel="stylesheet" href="delivery.css">
+</head>
+<body>
+  <header class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <img src="1000018199.png" alt="شعار المطعم" style="width:56px;height:56px;object-fit:contain;border-radius:50%;flex-shrink:0;">
+      <div>
+        <h1>🚴 لوحة الدليفري</h1>
+        <p>متابعة الطلبات الجاهزة وتسليمها للزبائن</p>
+      </div>
+    </div>
+    <button id="refreshBtn" class="secondary">تحديث</button>
+  </header>
+
+  <main class="container">
+    <section class="stats">
+      <div class="stat"><span>طلبات جاهزة</span><strong id="readyCount">0</strong></div>
+      <div class="stat"><span>جاري التوصيل</span><strong id="deliveryCount">0</strong></div>
+      <div class="stat"><span>تم التسليم</span><strong id="deliveredCount">0</strong></div>
+    </section>
+
+    <section class="toolbar">
+      <input id="searchInput" type="search" placeholder="ابحث باسم الزبون أو القاطع أو رقم الطلب...">
+      <select id="filterStatus">
+        <option value="all">كل الطلبات</option>
+        <option value="ready">جاهز للتوصيل</option>
+        <option value="out_for_delivery">جاري التوصيل</option>
+        <option value="delivered">تم التسليم</option>
+      </select>
+      <button id="clearDeliveredBtn" class="danger" onclick="clearAllDelivered()">🗑️ مسح جميع المُسلَّمة</button>
+    </section>
+
+    <section id="ordersGrid" class="orders-grid"></section>
+    <div id="emptyState" class="empty hidden">لا توجد طلبات مطابقة.</div>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- delivery.js بدون type="module" لأننا نستخدم Compat SDK -->
+  <script src="delivery.js"></script>
+</body>
+</html>
