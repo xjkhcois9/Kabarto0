@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مطعم باب الحارة – لوحة الشيف</title>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDqxclAE2ZgkwffqoxUppO2p3oPGYdqDgI",
+    authDomain: "mmmm-2eeb6.firebaseapp.com",
+    projectId: "mmmm-2eeb6",
+    storageBucket: "mmmm-2eeb6.firebasestorage.app",
+    messagingSenderId: "864687939860",
+    appId: "1:864687939860:web:044a597a874c79ceed2201",
+    measurementId: "G-0G1E2XY1XZ"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lalezar&family=Tajawal:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg: #16211a;
+  --bg-alt: #1f2e22;
+  --bg-card: #1a2920;
+  --paper: #efe6d0;
+  --paper-shadow: #d9cdac;
+  --ink: #23291f;
+  --ink-soft: #5b5744;
+  --mustard: #d9a441;
+  --rust: #c1442d;
+  --sage: #7c9473;
+  --blue: #5b9bd5;
+  --ring: rgba(217,164,65,.45);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  background:
+    radial-gradient(circle at 15% 10%, rgba(217,164,65,.07), transparent 45%),
+    radial-gradient(circle at 85% 90%, rgba(124,148,115,.08), transparent 50%),
+    var(--bg);
+  color: var(--paper);
+  font-family: 'Tajawal', sans-serif;
+  min-height: 100vh;
+}
+
+/* ───── HEADER ───── */
+header {
+  text-align: center;
+  padding: 36px 20px 26px;
+  border-bottom: 1px solid rgba(239,230,208,.1);
+}
+.eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; letter-spacing: .35em;
+  color: var(--mustard); text-transform: uppercase;
+}
+h1 {
+  font-family: 'Lalezar', sans-serif;
+  font-weight: 400; font-size: 44px;
+  color: var(--paper);
+  text-shadow: 0 2px 0 rgba(0,0,0,.3);
+  margin: 6px 0 5px;
+}
+.sub { color: #a9b6a6; font-size: 14px; }
+.rule {
+  width: 100px; height: 3px; margin: 14px auto 0;
+  background: repeating-linear-gradient(90deg, var(--mustard) 0 8px, transparent 8px 14px);
+  border-radius: 3px;
+}
+
+/* ───── STATS BAR ───── */
+.stats-bar {
+  display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+  padding: 22px 20px 0;
+  max-width: 900px; margin: 0 auto;
+}
+.stat-chip {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-alt);
+  border: 1px solid rgba(239,230,208,.08);
+  border-radius: 10px;
+  padding: 10px 18px;
+}
+.stat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.stat-dot.pending    { background: rgba(239,230,208,.5); }
+.stat-dot.preparing  { background: var(--mustard); }
+.stat-dot.ready      { background: var(--sage); }
+.stat-dot.delivering { background: var(--blue); }
+.stat-label { font-size: 13px; color: #a9b6a6; }
+.stat-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 17px; font-weight: 600; color: var(--paper);
+}
+
+/* ───── FILTER TABS ───── */
+.tabs {
+  display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+  padding: 22px 20px 0;
+}
+.tab {
+  font-family: 'Tajawal', sans-serif;
+  font-size: 13.5px; font-weight: 700;
+  background: transparent; color: #a9b6a6;
+  border: 1.5px solid rgba(239,230,208,.15);
+  border-radius: 999px; padding: 7px 18px;
+  cursor: pointer; transition: all .15s;
+}
+.tab.active-pending    { background: rgba(239,230,208,.12); color: var(--paper); border-color: rgba(239,230,208,.4); }
+.tab.active-preparing  { background: rgba(217,164,65,.18); color: var(--mustard); border-color: var(--mustard); }
+.tab.active-ready      { background: rgba(124,148,115,.18); color: #a8c9a0; border-color: var(--sage); }
+.tab.active-delivering { background: rgba(91,155,213,.18); color: #a0c4e8; border-color: var(--blue); }
+.tab.active-all        { background: var(--bg-alt); color: var(--paper); border-color: rgba(239,230,208,.35); }
+.tab:hover:not([class*="active"]) { border-color: rgba(239,230,208,.3); color: var(--paper); }
+
+/* ───── BOARD ───── */
+.wrap { max-width: 1100px; margin: 0 auto; padding: 22px 22px 80px; }
+
+.orders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px,1fr));
+  gap: 20px;
+  margin-top: 4px;
+}
+
+/* ───── ORDER TICKET ───── */
+.order-ticket {
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 1px solid rgba(239,230,208,.07);
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0,0,0,.25);
+  display: flex; flex-direction: column;
+  transition: transform .15s, box-shadow .15s;
+}
+.order-ticket:hover { transform: translateY(-2px); box-shadow: 0 14px 28px rgba(0,0,0,.35); }
+
+/* status bar on top */
+.ticket-status-bar {
+  height: 5px;
+  flex-shrink: 0;
+}
+.ticket-status-bar.pending    { background: rgba(239,230,208,.25); }
+.ticket-status-bar.preparing  { background: var(--mustard); }
+.ticket-status-bar.ready      { background: var(--sage); }
+.ticket-status-bar.delivering { background: var(--blue); }
+
+.ticket-inner { padding: 18px; flex: 1; display: flex; flex-direction: column; gap: 12px; }
+
+.ticket-head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+}
+.ticket-customer {
+  font-family: 'Lalezar', sans-serif;
+  font-weight: 400; font-size: 20px;
+}
+.ticket-location {
+  font-size: 11.5px; color: #a9b6a6; margin-top: 3px;
+}
+.ticket-time {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: #a9b6a6; text-align: left;
+  flex-shrink: 0;
+}
+
+.status-badge {
+  font-size: 11.5px; font-weight: 700;
+  border-radius: 999px; padding: 5px 12px;
+  display: inline-flex; align-items: center; gap: 5px;
+  white-space: nowrap;
+}
+.status-badge.pending    { background: rgba(239,230,208,.1);   color: rgba(239,230,208,.75); }
+.status-badge.preparing  { background: rgba(217,164,65,.18);   color: var(--mustard); }
+.status-badge.ready      { background: rgba(124,148,115,.18);  color: #a8c9a0; }
+.status-badge.delivering { background: rgba(91,155,213,.18);   color: #a0c4e8; }
+
+/* items list */
+.items-table { border-top: 1px dashed rgba(239,230,208,.1); padding-top: 12px; }
+.item-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 0;
+  font-size: 13.5px;
+}
+.item-qty {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; color: #a9b6a6;
+  min-width: 28px;
+}
+.item-name { flex: 1; }
+.item-sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; color: var(--mustard);
+}
+
+.ticket-total {
+  border-top: 1px dashed rgba(239,230,208,.1);
+  padding-top: 10px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.total-label { font-size: 12px; color: #a9b6a6; }
+.total-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 15px; font-weight: 600; color: var(--mustard);
+}
+/* currency appended inline */
+
+/* ───── ACTION BUTTONS ───── */
+.ticket-actions {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 8px; padding: 0 18px 16px;
+}
+.ticket-actions.single { grid-template-columns: 1fr; }
+
+.act-btn {
+  font-family: 'Tajawal', sans-serif;
+  font-size: 13.5px; font-weight: 700;
+  border: none; border-radius: 8px;
+  padding: 11px 10px;
+  cursor: pointer;
+  transition: filter .12s, transform .1s;
+  line-height: 1.3; text-align: center;
+}
+.act-btn:hover { filter: brightness(1.1); }
+.act-btn:active { transform: scale(.97); }
+.act-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+.btn-next-preparing  { background: rgba(217,164,65,.2); color: var(--mustard); border: 1.5px solid rgba(217,164,65,.4); }
+.btn-next-ready      { background: rgba(124,148,115,.2); color: #a8c9a0; border: 1.5px solid rgba(124,148,115,.4); }
+.btn-next-delivering { background: rgba(91,155,213,.2);  color: #a0c4e8; border: 1.5px solid rgba(91,155,213,.4); }
+.btn-archive         { background: rgba(193,68,45,.1); color: #f3b8ab; border: 1.5px solid rgba(193,68,45,.25); }
+
+/* ───── EMPTY STATE ───── */
+.empty-state {
+  grid-column: 1/-1;
+  text-align: center; padding: 60px 20px;
+  border: 2px dashed rgba(239,230,208,.12);
+  border-radius: 12px; color: #a9b6a6;
+}
+.empty-state .big {
+  font-family: 'Lalezar', sans-serif; font-size: 28px;
+  color: var(--paper); display: block; margin-bottom: 8px;
+}
+
+/* ───── NEW ORDER NOTIFICATION ───── */
+.notif {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-80px);
+  background: var(--mustard); color: #241a06;
+  padding: 13px 30px; border-radius: 999px;
+  font-weight: 900; font-size: 15px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  transition: transform .4s cubic-bezier(.34,1.56,.64,1);
+  z-index: 100; white-space: nowrap;
+}
+.notif.show { transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 520px) {
+  h1 { font-size: 34px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <img src="1000018199.png" alt="شعار المطعم" style="width:80px;height:80px;object-fit:contain;border-radius:50%;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto;">
+  <div class="eyebrow">لوحة تحكم الشيف</div>
+  <h1>👨‍🍳 مطبخ باب الحارة</h1>
+  <p class="sub">تابع الطلبات وحرّك كل طلب خطوة إلى الأمام</p>
+  <div class="rule"></div>
+</header>
+
+<!-- Stats -->
+<div class="stats-bar" id="statsBar">
+  <div class="stat-chip"><div class="stat-dot pending"></div><span class="stat-label">انتظار</span><span class="stat-num" id="cnt-pending">0</span></div>
+  <div class="stat-chip"><div class="stat-dot preparing"></div><span class="stat-label">تحضير</span><span class="stat-num" id="cnt-preparing">0</span></div>
+  <div class="stat-chip"><div class="stat-dot ready"></div><span class="stat-label">جاهزة</span><span class="stat-num" id="cnt-ready">0</span></div>
+  <div class="stat-chip"><div class="stat-dot delivering"></div><span class="stat-label">توصيل</span><span class="stat-num" id="cnt-delivering">0</span></div>
+</div>
+
+<!-- Filter Tabs -->
+<div class="tabs" id="tabsBar">
+  <button class="tab" data-filter="all">الكل</button>
+  <button class="tab" data-filter="pending">🕐 في الانتظار</button>
+  <button class="tab" data-filter="preparing">🔥 قيد التحضير</button>
+  <button class="tab" data-filter="ready">✅ جاهز للتوصيل</button>
+  <button class="tab" data-filter="delivering">🛵 جاري التوصيل</button>
+</div>
+
+<div class="wrap">
+  <div class="orders-grid" id="ordersGrid">
+    <div class="empty-state"><span class="big">جاري تحميل الطلبات…</span></div>
+  </div>
+</div>
+
+<!-- New order notification -->
+<div class="notif" id="notif">🔔 طلب جديد وصل!</div>
+
+<script>
+  let orders = [];
+  let activeFilter = 'all';
+  let knownIds = new Set();
+  let firstLoad = true;
+
+  const grid = document.getElementById('ordersGrid');
+
+  // Status meta
+  const statusMeta = {
+    new:        { label: '🕐 في الانتظار',    cls: 'pending'    }, // ✅ إضافة 'new'
+    pending:    { label: '🕐 في الانتظار',    cls: 'pending'    },
+    preparing:  { label: '🔥 قيد التحضير',    cls: 'preparing'  },
+    ready:      { label: '✅ جاهز للتوصيل',   cls: 'ready'      },
+    delivering: { label: '🛵 جاري التوصيل',   cls: 'delivering' },
+  };
+
+  // Next status map
+  const nextStatus = {
+    new:       'preparing',  // ✅ إضافة 'new' → يظهر زر "ابدأ التحضير"
+    pending:   'preparing',
+    preparing: 'ready',
+    ready:     'delivering',
+  };
+  const nextLabel = {
+    new:       '🔥 ابدأ التحضير', // ✅ إضافة 'new'
+    pending:   '🔥 ابدأ التحضير',
+    preparing: '✅ جاهز للتوصيل',
+    ready:     '🛵 أرسل للتوصيل',
+  };
+
+  // ─── Filter tabs ───
+  function setTabActive(filter){
+    activeFilter = filter;
+    document.querySelectorAll('.tab').forEach(t=>{
+      t.className = 'tab';
+      if (t.dataset.filter === filter){
+        const cls = filter === 'all' ? 'active-all' : `active-${filter}`;
+        t.classList.add(cls);
+      }
+    });
+  }
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.addEventListener('click',()=>{ setTabActive(t.dataset.filter); renderOrders(); });
+  });
+  setTabActive('all');
+
+  // ─── Update stats ───
+  function updateStats(){
+    // cnt-pending يشمل كلاً من 'new' و 'pending' ✅
+    document.getElementById('cnt-pending').textContent =
+      orders.filter(o => o.status === 'pending' || o.status === 'new').length;
+    ['preparing','ready','delivering'].forEach(s=>{
+      document.getElementById(`cnt-${s}`).textContent = orders.filter(o=>o.status===s).length;
+    });
+  }
+
+  // ─── Change status ───
+  async function changeStatus(id, newStatus){
+    const btn = document.querySelector(`[data-action="${id}"]`);
+    if (btn){ btn.disabled = true; btn.textContent = '…'; }
+    try {
+      await db.collection('orders').doc(id).update({ status: newStatus });
+    } catch(e){
+      console.error(e);
+      alert('تعذر تحديث الحالة');
+    }
+  }
+
+  async function archiveOrder(id){
+    if (!confirm('هل تريد أرشفة هذا الطلب وإخفاءه؟')) return;
+    try {
+      await db.collection('orders').doc(id).update({ archived: true });
+    } catch(e){ alert('تعذر الأرشفة'); }
+  }
+
+  // ─── Render ───
+  function renderOrders(){
+    let visible = orders.filter(o=> !o.archived);
+    if (activeFilter !== 'all') visible = visible.filter(o=>o.status===activeFilter);
+    visible = visible.sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
+
+    if (!visible.length){
+      const msgs = {
+        all:        ['ليس هناك طلبات حالياً', 'ستظهر الطلبات الجديدة هنا تلقائياً'],
+        pending:    ['لا طلبات في الانتظار', 'رائع، تم التعامل مع كل الطلبات!'],
+        preparing:  ['لا طلبات قيد التحضير', ''],
+        ready:      ['لا طلبات جاهزة', ''],
+        delivering: ['لا طلبات في التوصيل', ''],
+      };
+      const [big, small] = msgs[activeFilter]||msgs.all;
+      grid.innerHTML = `<div class="empty-state"><span class="big">${big}</span>${small}</div>`;
+      return;
+    }
+
+    grid.innerHTML = visible.map(o=>{
+      const meta = statusMeta[o.status] || { label: o.status, cls: 'pending' };
+      const t = o.createdAt?.toDate ? o.createdAt.toDate().toLocaleString('ar-SA',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}) : '';
+      const hasNext = nextStatus[o.status];
+
+      const actionBtns = `
+        ${hasNext ? `<button class="act-btn btn-next-${nextStatus[o.status]}" data-action="${o.id}" data-next="${nextStatus[o.status]}">${nextLabel[o.status]}</button>` : ''}
+        <button class="act-btn btn-archive" data-archive="${o.id}">🗂 أرشفة</button>
+      `;
+
+      return `
+        <div class="order-ticket" id="ot-${o.id}">
+          <div class="ticket-status-bar ${meta.cls}"></div>
+          <div class="ticket-inner">
+            <div class="ticket-head">
+              <div>
+                <div class="ticket-customer">${esc(o.customerName)}</div>
+                <div class="ticket-location">${o.district ? '🗺️ قاطع ' + esc(o.district) + ' &nbsp;⛺ خيمة ' + esc(o.tent) : ''}</div>
+              </div>
+              <div class="ticket-time">${t}</div>
+            </div>
+            <span class="status-badge ${meta.cls}">${meta.label}</span>
+            <div class="items-table">
+              ${(o.items||[]).map(i=>{
+                const qty = parseInt(i.quantity ?? i.qty) || 1; // ✅ يدعم كلا الحقلين
+                const linePrice = (parseFloat(i.price)||0) * qty;
+                return `
+                <div class="item-row">
+                  <span class="item-qty">×${qty}</span>
+                  <span class="item-name">${esc(i.name)}</span>
+                  <span class="item-sub">${linePrice.toLocaleString('ar-IQ')} د.ع</span>
+                </div>`;
+              }).join('')}
+            </div>
+            <div class="ticket-total">
+              <span class="total-label">الإجمالي</span>
+              <span class="total-val">${Number(o.total||0).toLocaleString('ar-IQ')} د.ع</span>
+            </div>
+          </div>
+          <div class="ticket-actions ${!hasNext?'single':''}">
+            ${actionBtns}
+          </div>
+        </div>`;
+    }).join('');
+
+    // bind buttons
+    grid.querySelectorAll('[data-action]').forEach(b=>{
+      b.addEventListener('click',()=>changeStatus(b.dataset.action, b.dataset.next));
+    });
+    grid.querySelectorAll('[data-archive]').forEach(b=>{
+      b.addEventListener('click',()=>archiveOrder(b.dataset.archive));
+    });
+  }
+
+  // ─── صوت التنبيه (Web Audio API — لا يحتاج ملف خارجي) ───
+  function playAlertSound() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+      const o1 = ctx.createOscillator(), g1 = ctx.createGain();
+      o1.connect(g1); g1.connect(ctx.destination);
+      o1.type = 'sine';
+      o1.frequency.setValueAtTime(880, ctx.currentTime);
+      o1.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.15);
+      g1.gain.setValueAtTime(0.6, ctx.currentTime);
+      g1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      o1.start(ctx.currentTime); o1.stop(ctx.currentTime + 0.3);
+
+      const o2 = ctx.createOscillator(), g2 = ctx.createGain();
+      o2.connect(g2); g2.connect(ctx.destination);
+      o2.type = 'sine';
+      o2.frequency.setValueAtTime(1100, ctx.currentTime + 0.25);
+      o2.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.45);
+      g2.gain.setValueAtTime(0.001, ctx.currentTime + 0.25);
+      g2.gain.setValueAtTime(0.7,   ctx.currentTime + 0.27);
+      g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55);
+      o2.start(ctx.currentTime + 0.25); o2.stop(ctx.currentTime + 0.55);
+
+      const o3 = ctx.createOscillator(), g3 = ctx.createGain();
+      o3.connect(g3); g3.connect(ctx.destination);
+      o3.type = 'sine';
+      o3.frequency.setValueAtTime(1320, ctx.currentTime + 0.55);
+      g3.gain.setValueAtTime(0.001, ctx.currentTime + 0.55);
+      g3.gain.setValueAtTime(0.8,   ctx.currentTime + 0.57);
+      g3.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.85);
+      o3.start(ctx.currentTime + 0.55); o3.stop(ctx.currentTime + 0.85);
+
+    } catch(e) { console.warn('Audio not supported:', e); }
+  }
+
+  // ─── اهتزاز الجهاز ───
+  function vibrateDevice() {
+    if ('vibrate' in navigator) {
+      navigator.vibrate([200, 100, 200, 100, 400]);
+    }
+  }
+
+  // ─── New order notification ───
+  function showNotif(){
+    const n = document.getElementById('notif');
+    n.classList.add('show');
+    setTimeout(()=>n.classList.remove('show'), 3500);
+    playAlertSound();
+    vibrateDevice();
+  }
+
+  // ─── Firebase listener ───
+  db.collection('orders')
+    .onSnapshot(snap=>{
+      const newOrders = snap.docs.map(d=>({id:d.id,...d.data()}));
+
+      if (!firstLoad){
+        newOrders.forEach(o=>{
+          if (!knownIds.has(o.id) && (o.status==='pending' || o.status==='new')) showNotif();
+        });
+      }
+
+      orders = newOrders;
+      knownIds = new Set(orders.map(o=>o.id));
+      firstLoad = false;
+
+      updateStats();
+      renderOrders();
+    }, err=>{
+      console.error(err);
+      grid.innerHTML=`<div class="empty-state"><span class="big">تعذر الاتصال</span>أعد تحميل الصفحة</div>`;
+    });
+
+  function esc(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+</script>
+</body>
+</html>
